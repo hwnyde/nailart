@@ -9,7 +9,7 @@ export default function Home() {
         title="AI-Powered YouTube Thumbnails That Get Clicks."
         subtitle="Generate scroll-stopping thumbnails in seconds. Just describe your video and let Nailart AI craft the perfect thumbnail to maximize your views."
         ctaLabel="Get Started"
-        ctaHref="#"
+        ctaHref="/auth"
         secondaryCtaLabel="Learn More"
         secondaryCtaHref="#features"
       />

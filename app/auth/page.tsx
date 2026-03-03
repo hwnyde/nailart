@@ -86,10 +86,10 @@ export default function AuthPage() {
     });
   };
 
-  // 이미 로그인된 사용자는 홈으로 리다이렉트
+  // 이미 로그인된 사용자는 대시보드로 리다이렉트
   useEffect(() => {
     if (user) {
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     }
   }, [user]);
 
