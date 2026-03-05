@@ -177,10 +177,14 @@ const toolsList = [
 ];
 
 // --- PromptBox (inner) ---
-const PromptBox = React.forwardRef<
-  HTMLTextAreaElement,
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(({ className, ...props }, ref) => {
+interface PromptBoxProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  onPromptSubmit?: (data: { prompt: string; image: string | null }) => void;
+  isLoading?: boolean;
+}
+
+const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
+  ({ className, onPromptSubmit, isLoading, ...props }, ref) => {
   const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [value, setValue] = React.useState("");
@@ -225,7 +229,15 @@ const PromptBox = React.forwardRef<
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const hasValue = value.trim().length > 0 || imagePreview;
+  const hasValue = (value.trim().length > 0 || imagePreview) && !isLoading;
+
+  const handleSend = () => {
+    if (!hasValue || isLoading) return;
+    onPromptSubmit?.({ prompt: value.trim(), image: imagePreview });
+    setValue("");
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
   const activeTool = selectedTool
     ? toolsList.find((t) => t.id === selectedTool)
     : null;
@@ -285,8 +297,15 @@ const PromptBox = React.forwardRef<
         rows={1}
         value={value}
         onChange={handleInputChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
         placeholder="Message..."
-        className="custom-scrollbar w-full resize-none border-0 bg-transparent p-3 text-white placeholder:text-gray-400 focus:ring-0 focus-visible:outline-none min-h-12"
+        disabled={isLoading}
+        className="custom-scrollbar w-full resize-none border-0 bg-transparent p-3 text-white placeholder:text-gray-400 focus:ring-0 focus-visible:outline-none min-h-12 disabled:opacity-50"
         {...props}
       />
 
@@ -388,16 +407,21 @@ const PromptBox = React.forwardRef<
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    type="submit"
+                    type="button"
                     disabled={!hasValue}
+                    onClick={handleSend}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none bg-white text-black hover:bg-white/80 disabled:bg-[#515151] disabled:text-gray-400 border-none cursor-pointer"
                   >
-                    <SendIcon className="h-6 w-6" />
+                    {isLoading ? (
+                      <div className="h-4 w-4 border-2 border-black/20 border-t-black/80 rounded-full animate-spin" />
+                    ) : (
+                      <SendIcon className="h-6 w-6" />
+                    )}
                     <span className="sr-only">Send message</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" showArrow>
-                  <p>Send</p>
+                  <p>{isLoading ? "Generating..." : "Send"}</p>
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -410,14 +434,19 @@ const PromptBox = React.forwardRef<
 PromptBox.displayName = "PromptBox";
 
 // --- Exported PromptArea ---
-export function PromptArea() {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+interface PromptAreaProps {
+  onSubmit?: (data: { prompt: string; image: string | null }) => void;
+  isLoading?: boolean;
+}
+
+export function PromptArea({ onSubmit, isLoading }: PromptAreaProps) {
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl">
-      <PromptBox />
+    <form onSubmit={handleFormSubmit} className="w-full max-w-2xl">
+      <PromptBox onPromptSubmit={onSubmit} isLoading={isLoading} />
     </form>
   );
 }
